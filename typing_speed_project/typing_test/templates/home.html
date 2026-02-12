@@ -1,0 +1,170 @@
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Typing Speed Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --main: #4a6cf7; --bg: #f7f9ff; --text: #2d3436; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; overflow: hidden; }
+        
+        /* Navbar Style */
+        nav { background: #fff; padding: 15px 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .logo { font-weight: 700; color: var(--main); font-size: 24px; text-decoration: none; }
+        .nav-links a { text-decoration: none; color: var(--text); margin-left: 20px; font-weight: 600; transition: 0.3s; }
+        .nav-links a:hover { color: var(--main); }
+        .user-tag { background: #e3ecff; padding: 5px 15px; border-radius: 20px; color: var(--main); font-size: 14px; }
+
+        .container { padding: 40px; }
+        .card { background: white; width: 80%; margin: 20px auto; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        textarea { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #eee; font-size: 18px; outline: none; transition: 0.3s; }
+        textarea:focus { border-color: var(--main); }
+        #paragraphText { background: #fdfdfd; color: #7f8c8d; cursor: default; }
+        
+        .timer-container { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+        .timer-btn { background: #eee; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .timer-btn.active { background: var(--main); color: white; }
+        .timer-display { margin-left: auto; font-size: 20px; font-weight: 700; color: #e74c3c; }
+        #liveWpm { color: var(--main); font-weight: 700; font-size: 18px; }
+        .submit-btn { background: var(--main); color: white; border: none; padding: 15px 40px; border-radius: 10px; cursor: pointer; display: block; margin: 20px auto; font-size: 16px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="/" class="logo">⌨️ TypingTest</a>
+    <div class="nav-links">
+        {% if user.is_authenticated %}
+            <span class="user-tag">👤 {{ user.username }}</span>
+            <a href="{% url 'logout' %}">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'signup' %}" style="background: var(--main); color: white; padding: 8px 20px; border-radius: 8px;">Sign Up</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="container">
+    <form method="POST" id="typingForm">
+        {% csrf_token %}
+        <textarea id="paragraphText" name="paragraph_text" rows="3" readonly>{{ paragraph }}</textarea>
+
+        <div class="card">
+            <div class="timer-container">
+                <button type="button" class="timer-btn" onclick="setTimeLimit(15)">15s</button>
+                <button type="button" class="timer-btn" onclick="setTimeLimit(30)">30s</button>
+                <button type="button" class="timer-btn active" onclick="setTimeLimit(60)">60s</button>
+                <span class="timer-display" id="timerDisplay">60s</span>
+            </div>
+            <p id="liveWpm">WPM: 0</p>
+            <textarea id="typedText" name="typed_text" rows="5" placeholder="Start typing here... timer starts automatically." required></textarea>
+        </div>
+        <input type="hidden" name="time_taken" id="timeTaken">
+        <button type="button" class="submit-btn" onclick="submitForm()">Finish Test</button>
+    </form>
+</div>
+
+<script>
+    let typedText = document.getElementById("typedText");
+    let timerDisplay = document.getElementById("timerDisplay");
+    let timeInput = document.getElementById("timeTaken");
+    let timeLimit = 60, timeLeft = 60, timerInterval = null, isRunning = false, startTime = null;
+
+    async function setTimeLimit(seconds) {
+        if (isRunning) return;
+        timeLimit = seconds; timeLeft = seconds;
+        timerDisplay.innerText = seconds + "s";
+        const response = await fetch(`/?get_text=${seconds}`);
+        const data = await response.json();
+        document.getElementById("paragraphText").value = data.paragraph;
+        document.querySelectorAll('.timer-btn').forEach(btn => btn.classList.toggle('active', btn.innerText.includes(seconds)));
+    }
+
+    //new event
+    typedText.addEventListener("input", () => {
+
+    if (!isRunning) {
+        isRunning = true;
+        startTime = new Date().getTime();
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.innerText = timeLeft + "s";
+            if (timeLeft <= 0) submitForm(true);
+        }, 1000);
+    }
+
+    calculateLiveWPM();  // call separate function
+});
+
+
+
+// function calculateLiveWPM() {
+//     if (!startTime) return;
+    
+//     // Calculate time elapsed in seconds
+//     let timeElapsed = (new Date().getTime() - startTime) / 1000; 
+//     let chars = typedText.value.length;
+
+//     // FIX: Only calculate if timeElapsed is more than 0.5 seconds
+//     // and if there are characters typed
+//     if (timeElapsed > 0.5 && chars > 0) {
+//         let wpm = Math.round((chars / 5) / (timeElapsed / 60));
+//         liveWpmDisplay.innerText = "WPM: " + wpm;
+//     } else {
+//         // Default display while starting
+//         liveWpmDisplay.innerText = "WPM: 0";
+//     }
+// }
+
+///this is calculateview function
+function calculateLiveWPM() {
+
+    if (!startTime) return;
+
+    let timeElapsed = (new Date().getTime() - startTime) / 1000;
+    let charsTyped = typedText.value.trim().length;
+
+    // Prevent division by zero
+    if (timeElapsed < 1 || charsTyped === 0) {
+        document.getElementById("liveWpm").innerText = "WPM: 0";
+        return;
+    }
+
+    let wordsTyped = charsTyped / 5;
+    let wpm = Math.round(wordsTyped / (timeElapsed / 60));
+
+    if (!isFinite(wpm) || wpm < 0) {
+        wpm = 0;
+    }
+
+    document.getElementById("liveWpm").innerText = "WPM: " + wpm;
+}
+
+
+
+
+
+
+
+
+   //this is new submitform code
+   function submitForm(auto = false) {
+    clearInterval(timerInterval);
+
+    let actualTime = timeLimit; // default fallback
+
+    if (startTime) {
+        actualTime = (new Date().getTime() - startTime) / 1000;
+    }
+
+    timeInput.value = auto ? timeLimit : actualTime;
+
+    document.getElementById("typingForm").submit();
+}
+
+
+    typedText.addEventListener("paste", e => { e.preventDefault(); alert("No pasting allowed!"); });
+</script>
+</body>
+</html>

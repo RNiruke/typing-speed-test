@@ -1,0 +1,76 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Results</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #4a6cf7; --success: #2ecc71; --danger: #e74c3c; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f2f5; padding: 40px 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--primary); display: block; }
+        .section { background: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; }
+        .text-box { line-height: 1.8; padding: 15px; background: #f9f9f9; border-radius: 10px; font-size: 1.1rem; }
+        .error-item { border-left: 4px solid var(--danger); background: #fff5f5; padding: 15px; margin-bottom: 10px; border-radius: 0 10px 10px 0; }
+        .btn { text-decoration: none; padding: 15px 40px; border-radius: 10px; background: var(--primary); color: white; font-weight: 600; display: inline-block; margin-top: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="dashboard">
+        <div class="stat-card"><span>Speed</span><span class="stat-value">{{ wpm }}</span><small>WPM</small></div>
+        <div class="stat-card"><span>Accuracy</span><span class="stat-value">{{ accuracy }}%</span></div>
+        <div class="stat-card"><span>Grammar</span><span class="stat-value">{{ grammar_score }}%</span></div>
+    </div>
+
+    <!-- <div class="section">
+        <h3>Analysis</h3>
+        <div class="text-box">{{ typed_text|safe }}</div>
+    </div> -->
+    <div class="section">
+    <h3>Target Text</h3>
+    <div class="text-box" style="color: #7f8c8d; background: #fdfdfd; border-left: 4px solid #95a5a6;">
+        {{ paragraph }}
+    </div>
+</div>
+
+<div class="section">
+    <h3>Your Typing</h3>
+    <div class="text-box">
+        {{ typed_text|safe }}
+    </div>
+</div>
+
+    <div class="section">
+        <h3>Grammar Feedback</h3>
+        {% if grammar_errors %}
+            {% for error in grammar_errors %}
+                <div class="error-item">
+                    <strong>Issue:</strong> {{ error.message }}<br>
+                    <span style="color:var(--success)">Suggestions: {{ error.suggestions|join:", " }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color:var(--success)">✨ Excellent writing!</p>
+        {% endif %}
+    </div>
+
+    <div style="text-align:center;">
+        <!-- {% if not user.is_authenticated and request.session.trial_used %}
+    <a href="{% url 'login' %}" class="btn">Try Again</a>
+{% else %}
+    <a href="/" class="btn">Try Again</a>
+{% endif %} -->
+
+  {% if not user.is_authenticated and request.session.trial_used %}
+    <a href="{% url 'login' %}" class="btn">Login to Try Again</a>
+{% else %}
+    <a href="/" class="btn">Try Again</a>
+{% endif %}
+
+    </div>
+</div>
+</body>
+</html>

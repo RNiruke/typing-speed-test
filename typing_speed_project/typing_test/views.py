@@ -7,7 +7,7 @@ import random
 import requests
 
 TIME_TEXTS = {
-    15: ["The sun is shining brightly today and the birds are singing in the tall trees.", "A quick brown fox jumps over the lazy dog in the middle of a green field.", "Reading a good book is a great way to relax after a long day at work."],
+    15: ["The sun is shining brightly today .", "A quick brown fox jumps over the lazy dog in the middle of a green field.", "Reading a good book is a great way to relax after a long day at work."],
     30: ["Nature is beautiful and it is a gift to us. flowers makes the world a better place to live.", "A healthy lifestyle is very important. Eating fresh fruit and vegetables every day helps you feel happy and gives you the energy to play outside."],
     60: ["Success is not about how fast you go, but about not stopping. Every small step you take brings you closer to your goal. If you practice something every day, you will eventually become very good at it. ","Traveling to new places is an amazing experience. You get to see how other people live and try different kinds of food. Whether you go to a busy city or a quiet mountain, there is always something new to learn."]
 }

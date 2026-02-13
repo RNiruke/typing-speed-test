@@ -30,14 +30,92 @@ def grammar_check(text):
     except:
         return []
 
+# # ---------------- HOME VIEW ----------------
+# def home(request):
+
+#     # ---------------- AJAX paragraph change ----------------
+#     if request.GET.get("get_text"):
+#         seconds = int(request.GET.get("get_text"))
+#         return JsonResponse({
+#             "paragraph": random.choice(TIME_TEXTS.get(seconds))
+#         })
+
+#     # ---------------- POST (Submit Test) ----------------
+#     if request.method == "POST":
+
+#         paragraph = request.POST.get("paragraph_text")
+#         typed_text = request.POST.get("typed_text")
+#         time_taken = float(request.POST.get("time_taken", 60))
+
+#         # WPM
+#         time_minutes = time_taken / 60
+#         wpm = round((len(typed_text) / 5) / time_minutes) if time_minutes > 0 else 0
+
+#         # Accuracy
+#         para_words = paragraph.split()
+#         typed_words = typed_text.split()
+#         correct = sum(
+#             1 for i in range(min(len(para_words), len(typed_words)))
+#             if para_words[i] == typed_words[i]
+#         )
+#         accuracy = round((correct / len(para_words)) * 100, 2) if para_words else 0
+
+#         grammar_errors = grammar_check(typed_text)
+#         grammar_score = max(0, 100 - len(grammar_errors) * 10)
+
+#         # ✅ Mark trial used AFTER submission
+#         if not request.user.is_authenticated:
+#             request.session["trial_used"] = True
+
+#         if request.user.is_authenticated:
+#             TypingResult.objects.create(
+#                 user=request.user,
+#                 wpm=wpm,
+#                 accuracy=accuracy,
+#                 grammar_score=grammar_score
+#             )
+
+#         return render(request, "result.html", {
+#             "wpm": wpm,
+#             "accuracy": accuracy,
+#             "grammar_score": grammar_score,
+#             "paragraph": paragraph,
+#             "typed_text": typed_text,
+#             "grammar_errors": grammar_errors
+
+#         })
+#         if not request.user.is_authenticated and request.session.get("trial_used", False):
+#             return redirect("login")
+#         paragraph = random.choice(TIME_TEXTS[60])
+#         return render(request, "home.html", {"paragraph": paragraph})
+    
+      
+
+
+
+
+#     # ---------------- GET (Open Test Page) ----------------
+#     # if not request.user.is_authenticated:
+#     #     if request.session.["trial_used"] = True
+#     #         return redirect("login")
+
+#     # paragraph = random.choice(TIME_TEXTS[60])
+#     # return render(request, "home.html", {"paragraph": paragraph})
+
+#    # ---------------- GET (Open Test Page) ----------------
+
+# # If user not logged in AND trial already used → block
+# new home view
+
 # ---------------- HOME VIEW ----------------
 def home(request):
 
     # ---------------- AJAX paragraph change ----------------
     if request.GET.get("get_text"):
         seconds = int(request.GET.get("get_text"))
+        options = TIME_TEXTS.get(seconds, TIME_TEXTS[60])  # fallback safety
         return JsonResponse({
-            "paragraph": random.choice(TIME_TEXTS.get(seconds))
+            "paragraph": random.choice(options)
         })
 
     # ---------------- POST (Submit Test) ----------------
@@ -63,10 +141,11 @@ def home(request):
         grammar_errors = grammar_check(typed_text)
         grammar_score = max(0, 100 - len(grammar_errors) * 10)
 
-        # ✅ Mark trial used AFTER submission
+        # Mark trial used AFTER submission (only for non-logged users)
         if not request.user.is_authenticated:
             request.session["trial_used"] = True
 
+        # Save result if logged in
         if request.user.is_authenticated:
             TypingResult.objects.create(
                 user=request.user,
@@ -85,12 +164,16 @@ def home(request):
         })
 
     # ---------------- GET (Open Test Page) ----------------
-    if request.user.is_authenticated:
-        if request.session.get("trial_used"):
-            return redirect("login")
 
+    # If not logged in AND trial already used → redirect to login
+    if not request.user.is_authenticated and request.session.get("trial_used", False):
+        return redirect("login")
+
+    # Otherwise allow access to test
     paragraph = random.choice(TIME_TEXTS[60])
     return render(request, "home.html", {"paragraph": paragraph})
+
+
 
 # ---------------- SIGNUP ----------------
 def signup_view(request):

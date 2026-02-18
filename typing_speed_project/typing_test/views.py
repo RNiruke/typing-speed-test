@@ -6,25 +6,35 @@ from .models import TypingResult
 import random
 import requests
 
-TIME_TEXTS = {
-    15: ["The sun is shining brightly today. today is great day. ", "A quick brown fox jumps over the lazy dog in the middle of a green field.", "Reading a good book is a great way to relax after a long day at work."],
-    30: ["Nature is beautiful and it is a gift to us. flowers makes the world a better place to live.", "A healthy lifestyle is very important. Eating fresh fruit and vegetables every day helps you feel happy and gives you the energy to play outside."],
-    60: ["Success is not about how fast you go, but about not stopping. Every small step you take brings you closer to your goal. If you practice something every day, you will eventually become very good at it. ","Traveling to new places is an amazing experience. You get to see how other people live and try different kinds of food. Whether you go to a busy city or a quiet mountain, there is always something new to learn."]
+
+# ---------------- IMAGE TEXT DATA ----------------
+IMAGE_TEXTS = {
+    15: [
+        {"image": "img_2.jpg", "text": "Just as with a traditional book, you can also highlight  favorite passages, add notes, and create bookmarks."},
+    ],
+    30: [
+        {"image": "img1.jpg", "text": "Be such  a man,  and live  such a life,that if every man were  such as you and every life a life like yours, this earth would be  God,s  paradise"},
+    ],
+    60: [
+        {"image": "img3.jpg", "text": "Nature reveals to us a beautiful  part of  ourselves we could not find anywhere else."},
+    ],
 }
 
 
 # ---------------- GRAMMAR CHECK ----------------
 def grammar_check(text):
     url = "https://api.languagetool.org/v2/check"
-    data = {'text': text, 'language': 'en-US'}
+    data = {"text": text, "language": "en-US"}
+
     try:
         response = requests.post(url, data=data)
         result = response.json()
+
         errors = []
-        for match in result.get('matches', []):
+        for match in result.get("matches", []):
             errors.append({
-                'message': match['message'],
-                'suggestions': [s['value'] for s in match.get('replacements', [])[:3]]
+                "message": match["message"],
+                "suggestions": [r["value"] for r in match.get("replacements", [])[:3]]
             })
         return errors
     except:
@@ -34,20 +44,33 @@ def grammar_check(text):
 # ---------------- HOME VIEW ----------------
 def home(request):
 
-    # ---------------- AJAX paragraph change ----------------
+     # ---- FREE TRIAL CHECK ----
+    if not request.user.is_authenticated:
+        trial_used = request.session.get("trial_used", False)
+
+        if trial_used:
+            return redirect("login")   # force login after trial
+    # -------- AJAX IMAGE CHANGE --------
     if request.GET.get("get_text"):
-        seconds = int(request.GET.get("get_text"))
-        options = TIME_TEXTS.get(seconds, TIME_TEXTS[60])  # fallback safety
+        seconds = int(request.GET.get("get_text", 60))
+
+        options = IMAGE_TEXTS.get(seconds, IMAGE_TEXTS[60])
+        data = random.choice(options)
+
         return JsonResponse({
-            "paragraph": random.choice(options)
+            "image": data["image"],
+            "paragraph": data["text"]
         })
 
-    # ---------------- POST (Submit Test) ----------------
+    # -------- SUBMIT TEST --------
     if request.method == "POST":
-
         paragraph = request.POST.get("paragraph_text")
         typed_text = request.POST.get("typed_text")
         time_taken = float(request.POST.get("time_taken", 60))
+
+        if not request.user.is_authenticated:
+          request.session["trial_used"] = True
+
 
         # WPM
         time_minutes = time_taken / 60
@@ -56,20 +79,18 @@ def home(request):
         # Accuracy
         para_words = paragraph.split()
         typed_words = typed_text.split()
+
         correct = sum(
             1 for i in range(min(len(para_words), len(typed_words)))
             if para_words[i] == typed_words[i]
         )
+
         accuracy = round((correct / len(para_words)) * 100, 2) if para_words else 0
 
+        # Grammar
         grammar_errors = grammar_check(typed_text)
         grammar_score = max(0, 100 - len(grammar_errors) * 10)
 
-        # Mark trial used AFTER submission (only for non-logged users)
-        if not request.user.is_authenticated:
-            request.session["trial_used"] = True
-
-        # Save result if logged in
         if request.user.is_authenticated:
             TypingResult.objects.create(
                 user=request.user,
@@ -87,18 +108,36 @@ def home(request):
             "grammar_errors": grammar_errors
         })
 
-    # ---------------- GET (Open Test Page) ----------------
+    # -------- NORMAL PAGE LOAD --------
+    data = random.choice(IMAGE_TEXTS[60])
 
-    # If not logged in AND trial already used → redirect to login
-    if not request.user.is_authenticated and request.session.get("trial_used", False):
-        return redirect("login")
-
-    # Otherwise allow access to test
-    paragraph = random.choice(TIME_TEXTS[60])
-    return render(request, "home.html", {"paragraph": paragraph})
+    return render(request, "home.html", {
+        "image_path":  "images/typing/" + data["image"],
+        "paragraph": data["text"]
+    })
 
 
+def try_again(request):
 
+    # If user not logged AND trial already used
+    if not request.user.is_authenticated:
+        if request.session.get("trial_used"):
+            return redirect("login")
+
+    # otherwise allow test again
+    return redirect("home")
+
+
+
+
+
+#----- result view-----
+def result(request):
+
+
+    return render(request, "result.html", context)
+
+   
 # ---------------- SIGNUP ----------------
 def signup_view(request):
     if request.method == "POST":

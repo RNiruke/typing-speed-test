@@ -36,6 +36,10 @@
         .dropdown:hover .dropdown-content { display: block; }
         .nav-links a { transition: 0.3s ease; }
         .nav-links a:hover { transform: translateY(-2px); }
+
+        .red-text {
+    color: red;
+}
     </style>
 </head>
 <body>
@@ -198,6 +202,45 @@
         e.preventDefault();
         alert("Pasting not allowed!");
     });
+
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const inputBox = document.querySelector("textarea");
+    const paragraph = document.querySelector("#paragraphText") || document.querySelector(".card");
+
+    if (!inputBox || !paragraph) return;
+
+    const originalText = paragraph.innerText;
+
+    inputBox.addEventListener("input", function () {
+        const typed = inputBox.value;
+
+        let resultHTML = "";
+
+        for (let i = 0; i < originalText.length; i++) {
+            if (typed[i] == null) {
+                resultHTML += originalText[i];
+            } 
+            else if (typed[i] === originalText[i]) {
+                resultHTML += originalText[i];
+            } 
+            else {
+                resultHTML += `<span class="red-text">${originalText[i]}</span>`;
+            }
+        }
+
+        paragraph.innerHTML = resultHTML;
+    });
+
+});
+
+
+
+
+
+
+
 </script>
 
 </body>

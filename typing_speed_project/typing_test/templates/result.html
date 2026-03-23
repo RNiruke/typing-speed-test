@@ -1,87 +1,53 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Results</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #4a6cf7; --success: #2ecc71; --danger: #e74c3c; }
-        body { font-family: 'Poppins', sans-serif; background: #f0f2f5; padding: 40px 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
+        :root { --primary: #4a6cf7; --success: #2ecc71; --danger: #c96458; }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: #f0f2f5; }
+        .navbar { background: white; padding: 18px 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 15px rgba(0,0,0,0.05); }
+        .logo { font-weight: 600; font-size: 20px; color: var(--primary); text-decoration: none; }
+        .nav-links a { margin-left: 25px; text-decoration: none; font-weight: 500; color: #444; }
+        .nav-links a:hover { color: var(--primary); }
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
         .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
         .stat-card { background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--primary); display: block; }
         .section { background: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; }
         .text-box { line-height: 1.8; padding: 15px; background: #f9f9f9; border-radius: 10px; font-size: 1.1rem; }
         .error-item { border-left: 4px solid var(--danger); background: #fff5f5; padding: 15px; margin-bottom: 10px; border-radius: 0 10px 10px 0; }
-        .btn { text-decoration: none; padding: 15px 40px; border-radius: 10px; background: var(--primary); color: white; font-weight: 600; display: inline-block; margin-top: 20px; }
-
-
-        .retry-wrapper{
-    text-align:center;
-    margin-top:25px;
-}
-
-.retry-btn{
-    display:inline-block;
-    background:#4a6cf7;
-    color:white;
-    padding:12px 28px;
-    border-radius:10px;
-    text-decoration:none;   /* removes underline */
-    font-weight:600;
-    font-size:16px;
-    transition:0.3s;
-}
-
-.retry-btn:hover{
-    background:#3554d1;
-    transform:translateY(-2px);
-}
-
-        /* .issue-list{
-    display:none;
-    position:absolute;
-    background:#fff;
-    border:1px solid #ccc;
-    border-radius:8px;
-    padding:10px;
-}
-
-.issue-item{
-    padding:8px;
-    cursor:pointer;
-}
-
-.issue-item:hover{
-    background:#f2f2f2;
-} */
-
-
-.issue-menu{
-    display:none;
-    position:relative;
-    background:white;
-    border:1px solid #ccc;
-    border-radius:8px;
-    margin-top:8px;
-}
-
-.issue-item{
-    padding:10px;
-    cursor:pointer;
-}
-
-.issue-item:hover{
-    background:#f3f3f3;
-}
-
-
-
-
+        .btn, .retry-btn { text-decoration: none; padding: 12px 28px; border-radius: 10px; background: var(--primary); color: white; font-weight: 600; display: inline-block; margin-top: 20px; font-size: 16px; transition: 0.3s; }
+        .btn:hover, .retry-btn:hover { background: #3554d1; transform: translateY(-2px); }
+        .retry-wrapper { text-align: center; margin-top: 25px; }
+        .issue-header { cursor: pointer; padding: 10px 0; user-select: none; }
+        .issue-menu { display: none; position: relative; background: white; border: 1px solid #ccc; border-radius: 8px; margin-top: 8px; }
+        .issue-item { padding: 10px; cursor: pointer; }
+        .issue-item:hover { background: #f3f3f3; }
+        #issueDisplay { margin-top: 15px; }
+        .wrong-char { color: #e1525e; font-weight: 600; }
+        .missing-char { color: #cb4a55; text-decoration: underline; }
     </style>
 </head>
 <body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="logo">⌨ TypingTest</a>
+    <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        {% if user.is_authenticated %}
+            <a href="{% url 'performance' %}">Performance</a>
+            <a href="{% url 'logout' %}">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+        {% endif %}
+    </div>
+</nav>
+
 <div class="container">
     <div class="dashboard">
         <div class="stat-card"><span>Speed</span><span class="stat-value">{{ wpm }}</span><small>WPM</small></div>
@@ -89,197 +55,77 @@
         <div class="stat-card"><span>Grammar</span><span class="stat-value">{{ grammar_score }}%</span></div>
     </div>
 
-    <!-- <div class="section">
-        <h3>Analysis</h3>
-        <div class="text-box">{{ typed_text|safe }}</div>
-    </div> -->
     <div class="section">
-    <h3>Target Text</h3>
-    <div class="text-box" style="color: #7f8c8d; background: #fdfdfd; border-left: 4px solid #95a5a6;">
-        {{ paragraph }}
+        <h3>Target Text</h3>
+        <div class="text-box" style="color:#7f8c8d; background:#fdfdfd; border-left:4px solid #95a5a6;">
+            {{ paragraph }}
+        </div>
     </div>
-</div>
 
-<div class="section">
-    <h3>Your Typing</h3>
-    <div class="text-box">
-        {{ typed_text|safe }}
+    <div class="section">
+        <h3>Your Typing</h3>
+        <div class="text-box">{{ highlighted_text|safe }}</div>
     </div>
-</div>
 
     <div class="section">
         <h3>Grammar Feedback</h3>
         {% if grammar_errors %}
-            <!-- {% for error in grammar_errors %}
-                <div class="error-item">
-                    <strong>Issue:</strong> {{ error.message }}<br>
-                    <span style="color:var(--success)">Suggestions: {{ error.suggestions|join:", " }}</span>
+            <div class="issue-dropdown">
+                <div class="issue-header" onclick="toggleIssueMenu()">
+                    <strong>Issues Found: {{ grammar_errors|length }} ▼</strong>
                 </div>
-            {% endfor %} -->
-        {% else %}
-            <p style="color:var(--success)">✨ Excellent writing!</p>
-        {% endif %}
-
-
-
-        <div class="issue-dropdown">
-
-    <!-- Single Line Header -->
-    <!-- <div class="issue-header" onclick="toggleIssueList()">
-        Issues Found: {{ grammar_errors|length }} ▼
-    </div> -->
-
-    <!-- Dropdown List -->
-   <div class="issue-dropdown">
-
-    <!-- Header -->
-    <div class="issue-header" onclick="toggleIssueMenu()">
-        Issues Found: {{ grammar_errors|length }} ▼
-    </div>
-
-    <!-- Menu -->
-    <div id="issueMenu" class="issue-menu">
-        {% for error in grammar_errors %}
-            <div class="issue-item"
-                 data-index="{{ forloop.counter0 }}"
-                 onclick="selectIssue(this)">
-                Issue {{ forloop.counter }}
+                <div id="issueMenu" class="issue-menu">
+                    {% for error in grammar_errors %}
+                        <div class="issue-item" data-index="{{ forloop.counter0 }}" onclick="selectIssue(this)">
+                            Issue {{ forloop.counter }}
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
-        {% endfor %}
-    </div>
-
-</div>
-
-<!-- Selected issue shows here -->
-<div id="issueDisplay"></div>
-
-</div>
-
-<!-- Selected issue will appear here -->
-<div id="issueDisplay"></div>
-
-    </div>
-
-
-
-
-    <!-- <div id="hiddenIssues" style="display:none;">
-{% for error in grammar_errors %}
-    <div class="issue-data">
-        <p><strong>Issue:</strong> {{ error.message }}</p>
-
-        <p><strong>Suggestions:</strong>
-        {% for sug in error.replacements %}
-            <span class="suggestion">{{ sug.value }}</span>
-        {% empty %}
-            No suggestions
-        {% endfor %}
-        </p>
-    </div>
-{% endfor %}
-</div> -->
-
-
-<!-- this is for the  new errro suggestions code -->
- <div id="hiddenIssues" style="display:none;">
-{% for error in grammar_errors %}
-    <div class="issue-data error-item">
-
-        <p><strong>Issue:</strong> {{ error.message }}</p>
-
-        <p><strong>Suggestions:</strong>
-        {% if error.suggestions %}
-            {% for sug in error.suggestions %}
-                <span style="color:#2ecc71; font-weight:600;">
-                    {{ sug }}
-                </span>{% if not forloop.last %}, {% endif %}
-            {% endfor %}
+            <div id="issueDisplay"></div>
+            <div id="hiddenIssues" style="display:none;">
+                {% for error in grammar_errors %}
+                    <div class="issue-data error-item">
+                        <p><strong>Issue {{ forloop.counter }}:</strong> {{ error.message }}</p>
+                        <p><strong>Suggestions:</strong>
+                        {% if error.suggestions %}
+                            {% for sug in error.suggestions %}
+                                <span style="color:var(--success); font-weight:600;">{{ sug }}</span>{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <span style="color:#888;">Manual correction required</span>
+                        {% endif %}
+                        </p>
+                    </div>
+                {% endfor %}
+            </div>
         {% else %}
-            <span style="color:#888;">Manual correction required</span>
+            <p style="color:var(--success); font-weight:600;">✨ Excellent writing! No grammar issues found.</p>
         {% endif %}
-        </p>
-
     </div>
-{% endfor %}
-</div>
 
-
-
-
-
-
-
-
-
-
-
- <!-- above added step 2 -->
-    <div id="issueData" style="display:none;">
-{% for error in grammar_errors %}
-    <div class="issue-data">
-
-        <p><strong>Issue:</strong> {{ error.message }}</p>
-
-        <p><strong>Suggestions:</strong></p>
-
-        {% for sug in error.replacements %}
-            <span class="suggestion">{{ sug.value }}</span>
-        {% empty %}
-            <span>No suggestions</span>
-        {% endfor %}
-
-    </div>
-    
-{% endfor %}
-</div>
-
-
-    <div style="text-align:center;">
-        <!-- {% if not user.is_authenticated and request.session.trial_used %}
-    <a href="{% url 'login' %}" class="btn">Try Again</a>
-{% else %}
-    <a href="/" class="btn">Try Again</a>
-{% endif %} -->
-
-  {% if not user.is_authenticated and request.session.trial_used %}
-    <a href="{% url 'login' %}" class="btn">Login to Try Again</a>
-{% else %}
-    <!-- <a href="/" class="btn">Try Again</a> -->
-     <a href="{% url 'try_again' %}" class="retry-btn">Try Again</a>
-{% endif %}
-
+    <div class="retry-wrapper">
+        {% if not user.is_authenticated and request.session.trial_used %}
+            <a href="{% url 'login' %}" class="btn">Take Another Test</a>
+            
+        {% else %}
+            <a href="{% url 'try_again' %}" class="retry-btn">Take Another Test</a>
+        {% endif %}
     </div>
 </div>
 
 <script>
-
-function toggleIssueMenu() {
-    let menu = document.getElementById("issueMenu");
-
-    menu.style.display =
-        menu.style.display === "block" ? "none" : "block";
-}
-
-function selectIssue(element) {
-
-    let index = element.dataset.index;
-
-    let allIssues =
-        document.querySelectorAll("#hiddenIssues .issue-data");
-
-    let display =
-        document.getElementById("issueDisplay");
-
-    // show ONLY selected issue
-    display.innerHTML = allIssues[index].innerHTML;
-
-    // close dropdown
-    document.getElementById("issueMenu").style.display = "none";
-}
-
+    function toggleIssueMenu() {
+        const menu = document.getElementById("issueMenu");
+        menu.style.display = (menu.style.display === "block") ? "none" : "block";
+    }
+    function selectIssue(element) {
+        const index     = element.dataset.index;
+        const allIssues = document.querySelectorAll("#hiddenIssues .issue-data");
+        document.getElementById("issueDisplay").innerHTML = allIssues[index].innerHTML;
+        document.getElementById("issueMenu").style.display = "none";
+    }
 </script>
-
-
 
 </body>
 </html>

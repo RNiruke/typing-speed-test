@@ -10,7 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,9 +25,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-fv_f0#@np$!57g=c1t(qx4d4u9mswg85c7)ak6y1sjn)frew1('
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True 
+ALLOWED_HOSTS = [ "127.0.0.1", "localhost", 
+                  ".ngrok-free.app",
+                  ".ngrok-free.dev", 
+                  'pseudobiographical-myrl-seedily.ngrok-free.dev']
 
-ALLOWED_HOSTS = []
+
 
 
 # Application definition
@@ -111,7 +117,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-
+TIME_ZONE = 'Asia/Kolkata'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
@@ -120,3 +126,59 @@ STATIC_URL = 'static/'
 # STATICFILES_DIRS = [
 #     BASE_DIR / "static",
 # ]
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+# CSRF_USE_SESSIONS = False
+# CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000','http://localhost:8000',]
+
+# ---------------- AUTH SETTINGS ----------------
+LOGIN_URL = "login"              # if user not logged in → redirect to login page
+LOGIN_REDIRECT_URL = "home"         # after login → go to home page
+LOGOUT_REDIRECT_URL = None         # after logout → go to home page
+
+
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+CSRF_USE_SESSIONS = False
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1",
+    "http://localhost",
+    "https://*.ngrok-free.app",
+    "https://*.ngrok-free.dev",
+]
+
+
+
+
+
+
+# -------- SESSION SETTINGS --------
+
+SESSION_COOKIE_SECURE = False
+
+# ✅ This is the KEY fix for your exact problem
+SESSION_COOKIE_NAME = 'sessionid'
+CSRF_COOKIE_NAME = 'csrftoken'
+
+
+EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST          = 'smtp.gmail.com'
+EMAIL_PORT          = 587
+EMAIL_USE_TLS       = True
+EMAIL_HOST_USER     = 'rutujaniruke1219@gmail.com'      # ← your Gmail address
+EMAIL_HOST_PASSWORD = 'bhfsqnuariinhwbb'    # ← Gmail App Password (not your normal password)
+DEFAULT_FROM_EMAIL  = 'TypingTest <rutujaniruke1219@gmail.com>'
+
+# Token expiry: activation link expires after this many seconds (default = 259200 = 3 days)
+# Change to 86400 for 24 hours
+PASSWORD_RESET_TIMEOUT = 86400
+
+
+

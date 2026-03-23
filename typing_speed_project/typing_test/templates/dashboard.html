@@ -1,0 +1,176 @@
+{% load tz %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Performance Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: #f3f7ff; color: #2c3e50; }
+
+        .navbar { background: white; padding: 18px 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 15px rgba(0,0,0,0.05); }
+        .logo { font-weight: 600; font-size: 20px; color: #4a6cf7; text-decoration: none; }
+        .nav-links a { margin-left: 25px; text-decoration: none; font-weight: 500; color: #444; }
+        .nav-links a:hover { color: #4a6cf7; }
+
+        .container { width: 90%; margin: auto; margin-top: 30px; }
+
+        .stats { display: flex; gap: 25px; margin-bottom: 30px; }
+        .stat-card { flex: 1; background: white; padding: 25px; border-radius: 14px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); transition: 0.3s; }
+        .stat-card:hover { transform: translateY(-4px); }
+        .stat-card h2 { margin: 0; font-size: 32px; color: #4a6cf7; }
+        .stat-card p { margin-top: 8px; color: #777; }
+
+        .filters { text-align: center; margin-bottom: 25px; }
+        .filters a { text-decoration: none; padding: 10px 22px; margin: 6px; border-radius: 25px; background: white; color: #4a6cf7; font-weight: 600; box-shadow: 0 3px 10px rgba(0,0,0,0.05); transition: 0.25s; }
+        .filters a:hover { background: #4a6cf7; color: white; }
+        .active-filter { background: #4a6cf7 !important; color: white !important; }
+
+        .performance-layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 25px; align-items: stretch; margin-bottom: 30px; }
+
+        .graph-card { background: white; padding: 20px; border-radius: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); height: 260px; }
+        .graph-card canvas { height: 220px !important; }
+
+        .table-card { background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.05); height: 100%; display: flex; flex-direction: column; }
+
+        table { width: 100%; height: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #fafafc; padding: 14px; font-weight: 500; text-align: center; }
+        td { padding: 12px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) { background: #f5f8ff; }
+        tr:hover { background: #eef3ff; }
+
+        .page-title { font-size: 24px; font-weight: 600; margin-bottom: 20px; }
+
+        .profile-header { background: #eaf1ff; margin: 30px auto; width: 90%; border-radius: 16px; padding: 25px 35px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .profile-left { display: flex; align-items: center; gap: 18px; }
+        .avatar { width: 60px; height: 60px; border-radius: 50%; background: #4a6cf7; color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .joined { color: #777; font-size: 14px; }
+        .profile-stats { display: flex; gap: 40px; }
+        .profile-box p { margin: 0; color: #666; font-size: 14px; }
+        .profile-box h3 { margin: 5px 0 0; font-size: 28px; color: #4a6cf7; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="logo">⌨ TypingTest</a>
+    <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'performance' %}">Performance</a>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-title">Your Performance Dashboard</div>
+
+    <!-- PROFILE HEADER -->
+    <div class="profile-header">
+        <div class="profile-left">
+            <div class="avatar">👤</div>
+            <div>
+                <h2>{{ request.user.username }}</h2>
+                <p class="joined">Joined {{ request.user.date_joined|date:"d M Y" }}</p>
+            </div>
+        </div>
+        <div class="profile-stats">
+            <div class="profile-box">
+                <p>tests completed</p>
+                <h3>{{ tests_completed }}</h3>
+            </div>
+            <div class="profile-box">
+                <p>time typing</p>
+                <h3>{{ time_typing }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stat-card">
+            <h2>{{ total_tests }}</h2>
+            <p>Total Tests</p>
+        </div>
+        <div class="stat-card">
+            <h2>{{ total_time }}s</h2>
+            <p>Total Typing Time</p>
+        </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters">
+        <a href="{% url 'performance' %}" class="{% if selected_time == 'all' %}active-filter{% endif %}">All</a>
+        <a href="?time=15"  class="{% if selected_time == '15' %}active-filter{% endif %}">15 sec</a>
+        <a href="?time=30"  class="{% if selected_time == '30' %}active-filter{% endif %}">30 sec</a>
+        <a href="?time=60"  class="{% if selected_time == '60' %}active-filter{% endif %}">60 sec</a>
+    </div>
+
+    <!-- GRAPH + TABLE -->
+    <div class="performance-layout">
+        <div class="graph-card">
+            <canvas id="wpmChart"></canvas>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <tr>
+                    <th>Date</th>
+                    <th>WPM</th>
+                    <th>Time Limit</th>
+                    <th>Actual Time</th>
+                    <th>Accuracy</th>
+                    <th>Grammar</th>
+                </tr>
+                {% for r in results %}
+                <tr>
+                    <td>{{ r.created_at|localtime|date:"d M Y H:i" }}</td>
+                    <td><b>{{ r.wpm }}</b></td>
+                    <td>{{ r.time_limit }}s</td>
+                    <td>{{ r.test_time|floatformat:0 }}s</td>
+                    <td>{{ r.accuracy }}%</td>
+                    <td>{{ r.grammar_score }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">No test history available</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const labels = {{ graph_labels|safe }};
+    const data   = {{ graph_wpm|safe }};
+
+    new Chart(document.getElementById("wpmChart"), {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Net WPM",
+                data: data,
+                borderWidth: 3,
+                tension: 0.35,
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 10 } }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
